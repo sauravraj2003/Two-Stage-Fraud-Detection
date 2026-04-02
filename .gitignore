@@ -1,0 +1,25 @@
+# Data and Databases
+data/
+*.sqlite
+*.db
+*.parquet
+*.csv
+
+# Trained Models
+models/
+*.pkl
+*.joblib
+*.model
+
+# Logs
+logs/
+*.log
+
+# Python Cache
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# OS Files
+.DS_Store
