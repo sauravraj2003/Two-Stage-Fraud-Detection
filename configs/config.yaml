@@ -1,0 +1,205 @@
+# ============================================================
+# Financial Crime Intelligence Platform — Master Config
+# ============================================================
+# All paths, hyperparameters, and thresholds are defined here.
+# No values should be hardcoded in source modules.
+# ============================================================
+
+# ----------------------------------------------------------
+# Paths
+# ----------------------------------------------------------
+paths:
+  raw_data_dir: "data/raw/IBM_AML"
+  processed_dir: "data/processed"
+  feature_store_dir: "data/feature_store"
+  models_dir: "models"
+  reports_dir: "reports"
+  mlflow_tracking_uri: "mlruns"
+
+  # Raw files (relative to raw_data_dir)
+  transactions_file: "transactions.csv"
+  accounts_file: "accounts.csv"
+  alerts_file: "alerts.csv"
+
+  # Feature store output tables
+  transaction_features_file: "transaction_features.parquet"
+  account_features_file: "account_features.parquet"
+  temporal_features_file: "temporal_features.parquet"
+  rolling_features_file: "rolling_features.parquet"
+  graph_features_file: "graph_features.parquet"
+  anomaly_scores_file: "anomaly_scores.parquet"
+  final_features_file: "final_features.parquet"
+
+  # Human-in-the-loop
+  review_queue_db: "data/review_queue.db"
+  investigator_feedback_file: "data/investigator_feedback.parquet"
+
+# ----------------------------------------------------------
+# Ingestion
+# ----------------------------------------------------------
+ingestion:
+  chunk_size: 200_000          # rows per chunk
+  sample_mode: false           # set true for 1M-row demo
+  sample_size: 1_000_000
+  dtype_map:
+    TX_ID: "int32"
+    SENDER_ACCOUNT_ID: "int32"
+    RECEIVER_ACCOUNT_ID: "int32"
+    TX_AMOUNT: "float32"
+    TIMESTAMP: "int32"
+    ALERT_ID: "int32"
+
+# ----------------------------------------------------------
+# Timestamp Engineering Assumption
+# ============================================================
+# IMPORTANT: Each simulation TIMESTAMP step is treated as
+# ONE HOUR. This is an engineering assumption — the IBM AML
+# dataset provides simulation steps, not wall-clock times.
+# Rolling windows below are therefore expressed in steps
+# where 1 step = 1 hour.
+# ----------------------------------------------------------
+timestamp:
+  step_unit: "hour"           # One TIMESTAMP step = 1 hour
+  steps_per_day: 24
+  steps_per_week: 168
+  steps_per_month: 720
+
+# ----------------------------------------------------------
+# Rolling Window Sizes (in steps = hours)
+# ----------------------------------------------------------
+rolling_windows:
+  - 1          # 1 hour
+  - 24         # 1 day
+  - 168        # 7 days
+  - 720        # 30 days
+
+# ----------------------------------------------------------
+# Graph Features
+# ----------------------------------------------------------
+graph:
+  window_sizes:              # Sliding window sizes for graph construction
+    - 24                     # 1-day graph
+    - 168                    # 7-day graph
+  pagerank_alpha: 0.85
+  betweenness_k: 500         # Approximation sample size (k=500 for scalability)
+  min_edges_for_betweenness: 100
+  community_algorithm: "greedy_modularity"  # or "label_propagation"
+
+# ----------------------------------------------------------
+# Anomaly Detection
+# ----------------------------------------------------------
+anomaly_detection:
+  contamination: "auto"      # Let IF estimate
+  n_estimators: 200
+  max_samples: "auto"
+  random_state: 42
+  n_jobs: -1
+
+# ----------------------------------------------------------
+# Risk Model
+# ----------------------------------------------------------
+risk_model:
+  cv_folds: 5
+  random_state: 42
+  test_size: 0.20
+  early_stopping_rounds: 50
+
+  # Optuna
+  optuna_n_trials: 30
+  optuna_direction: "maximize"
+  optuna_metric: "roc_auc"
+
+  # Business cost matrix (USD)
+  false_negative_cost: 214.0   # Average fraud amount in dataset
+  false_positive_cost: 20.0    # Cost of manual investigation
+
+  # Models to compare
+  models:
+    - "logistic_regression"
+    - "random_forest"
+    - "lightgbm"
+
+  primary_model: "lightgbm"
+
+  # LightGBM hyperparameter search space
+  lgbm_search_space:
+    num_leaves: [20, 300]
+    max_depth: [3, 12]
+    learning_rate: [0.01, 0.3]
+    n_estimators: [100, 1000]
+    min_child_samples: [5, 100]
+    colsample_bytree: [0.5, 1.0]
+    subsample: [0.5, 1.0]
+    reg_alpha: [0.0, 10.0]
+    reg_lambda: [0.0, 10.0]
+
+# ----------------------------------------------------------
+# Risk Fusion Weights
+# ----------------------------------------------------------
+risk_fusion:
+  lgbm_weight: 0.70
+  isolation_forest_weight: 0.20
+  rule_weight: 0.10
+
+  # Business rules thresholds
+  rules:
+    large_amount_threshold: 5000.0
+    large_amount_score: 0.30
+    alert_pattern_score: 0.20
+    high_neighborhood_fraud_threshold: 0.50
+    high_neighborhood_fraud_score: 0.15
+
+  # Risk category thresholds (0-100 score)
+  categories:
+    low_max: 25
+    medium_max: 50
+    high_max: 75
+    # above 75 = Critical
+
+  # Human review range
+  human_review_min: 25
+  human_review_max: 50
+
+# ----------------------------------------------------------
+# Calibration
+# ----------------------------------------------------------
+calibration:
+  method: "isotonic"    # "platt" (sigmoid) or "isotonic"
+  cv: 5
+
+# ----------------------------------------------------------
+# Explainability
+# ----------------------------------------------------------
+explainability:
+  max_shap_display: 20        # Top N features in global summary
+  local_top_n_reasons: 3      # Top N reason codes per prediction
+  shap_background_samples: 1000
+
+# ----------------------------------------------------------
+# Monitoring
+# ----------------------------------------------------------
+monitoring:
+  psi_threshold_warning: 0.10
+  psi_threshold_critical: 0.20
+  drift_check_window_steps: 168   # Check drift over last 7-day window
+  calibration_drift_threshold: 0.05
+
+# ----------------------------------------------------------
+# MLflow
+# ----------------------------------------------------------
+mlflow:
+  experiment_name: "financial_crime_intelligence"
+  model_registry_name: "fraud_detector"
+  tags:
+    team: "risk_analytics"
+    env: "development"
+    dataset: "IBM_AML_100K"
+
+# ----------------------------------------------------------
+# Streamlit Dashboard
+# ----------------------------------------------------------
+dashboard:
+  title: "Financial Crime Intelligence Platform"
+  theme: "dark"
+  max_table_rows: 10_000
+  graph_max_nodes: 500       # Limit for visualization performance
