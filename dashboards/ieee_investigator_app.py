@@ -1,6 +1,7 @@
 """
+--------------------------------
 ieee_investigator_app.py
-========================
+--------------------------------
 Streamlit dashboard for the IEEE-CIS Financial Crime Intelligence Platform.
 Pages:
   1. Overview        — KPIs, fraud rate, risk distribution
@@ -9,8 +10,7 @@ Pages:
   4. SHAP Explainability — feature importance + per-transaction explanations
   5. Drift Monitoring   — PSI charts + feature stability
 
-Run:
-    streamlit run dashboards/ieee_investigator_app.py
+Run: streamlit run dashboards/ieee_investigator_app.py
 """
 
 import os, sys, json, sqlite3
