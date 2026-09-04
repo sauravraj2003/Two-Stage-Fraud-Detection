@@ -177,6 +177,6 @@ streamlit run dashboards/ieee_investigator_app.py
 
 ---
 
-## 📝 Resume Impact
+## 📝 Impact
 
 > *"Built an end-to-end Two-Stage fraud detection pipeline (unsupervised Isolation Forest + LightGBM) for 590K transactions. Engineered 448 velocity features via a Two-Pass Out-of-Core chunked pipeline with dtype downcasting, strictly capping peak RAM at 3.6 GB. Benchmarked LightGBM against linear baselines, achieving a 3.2x increase in PR-AUC (0.893) on a 37K holdout set. Mitigated 3.5% class imbalance via stratified downsampling, and tuned hyperparameters via Bayesian Optuna. Deployed a Streamlit investigator dashboard backed by SQLite and TreeSHAP explainability (XAI)."*
